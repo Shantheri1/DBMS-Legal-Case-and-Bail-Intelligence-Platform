@@ -13,13 +13,13 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/cases': ['ADMIN', 'JUDGE', 'LAWYER', 'CLERK'],
   '/bail/apply': ['ADMIN', 'LAWYER'],
   '/bail/intelligence': ['ADMIN', 'JUDGE', 'LAWYER'],
+  '/overview': ['ADMIN', 'JUDGE', 'LAWYER', 'CLERK'],
 };
 
 /**
  * Helper to determine if a route requires authentication and which roles are allowed.
  */
 function getRequiredRolesForPath(pathname: string): string[] | null {
-  // Check exact matches or prefix matches
   if (pathname.startsWith('/bail/apply')) {
     return ROLE_PERMISSIONS['/bail/apply'];
   }
@@ -31,6 +31,9 @@ function getRequiredRolesForPath(pathname: string): string[] | null {
   }
   if (pathname.startsWith('/dashboard')) {
     return ROLE_PERMISSIONS['/dashboard'];
+  }
+  if (pathname.startsWith('/overview')) {
+    return ROLE_PERMISSIONS['/overview'];
   }
   return null;
 }
@@ -46,7 +49,19 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = Boolean(session);
   const userRole = session ? normalizeRole(session.role) : null;
 
-  // 3. Handle /login route: If already authenticated, redirect to /dashboard
+  // 3. Handle root path (/): Unauthenticated visitors must log in first!
+  if (pathname === '/') {
+    if (!isAuthenticated) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('callbackUrl', '/dashboard');
+      return NextResponse.redirect(loginUrl);
+    } else {
+      const dashboardUrl = new URL('/dashboard', request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
+  }
+
+  // 4. Handle /login route: If already authenticated, redirect to /dashboard
   if (pathname === '/login') {
     if (isAuthenticated) {
       const dashboardUrl = new URL('/dashboard', request.url);
@@ -55,7 +70,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 4. Check if the current route is protected
+  // 5. Check if the current route is protected
   const allowedRoles = getRequiredRolesForPath(pathname);
 
   if (allowedRoles) {
@@ -63,7 +78,6 @@ export async function middleware(request: NextRequest) {
     if (!isAuthenticated || !userRole) {
       const loginUrl = new URL('/login', request.url);
       const destination = pathname + search;
-      // Store relative destination path safely in callbackUrl
       loginUrl.searchParams.set('callbackUrl', destination);
       return NextResponse.redirect(loginUrl);
     }
@@ -78,7 +92,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 5. User is authenticated and authorized (or route is public)
+  // 6. User is authenticated and authorized (or route is public)
   const response = NextResponse.next();
 
   // Forward user role in request headers for downstream server components if needed
@@ -93,11 +107,12 @@ export async function middleware(request: NextRequest) {
 
 /**
  * Next.js Edge Middleware Route Matcher:
- * Targets protected judicial routes and the login page.
- * Explicitly excludes static assets, public files, and core auth APIs.
+ * Matches root '/', protected routes, and login.
  */
 export const config = {
   matcher: [
+    '/',
+    '/overview/:path*',
     '/dashboard/:path*',
     '/cases/:path*',
     '/bail/:path*',

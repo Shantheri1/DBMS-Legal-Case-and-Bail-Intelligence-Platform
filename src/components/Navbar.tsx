@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, LogIn, User, Shield } from 'lucide-react';
+import { LogOut, LogIn, Shield } from 'lucide-react';
 
 interface AuthUser {
   userId: number;
@@ -61,7 +61,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo */}
         <div className="flex items-center space-x-3">
-          <Link href="/" className="flex items-center space-x-3 group">
+          <Link href={currentUser ? "/dashboard" : "/login"} className="flex items-center space-x-3 group">
             <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center font-bold text-slate-950 shadow group-hover:bg-amber-400 transition">
               JP
             </div>
@@ -128,6 +128,18 @@ export default function Navbar() {
                 </Link>
               )}
 
+              {/* Project Specs & Architecture */}
+              <Link
+                href="/overview"
+                className={`transition ${
+                  pathname.startsWith('/overview')
+                    ? 'text-amber-400 font-bold'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                Project Specs
+              </Link>
+
               {/* Authenticated User Badge & Logout */}
               <div className="flex items-center space-x-3 pl-3 border-l border-slate-800">
                 <div className="hidden md:flex flex-col text-right">
@@ -151,20 +163,13 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              {/* Unauthenticated View */}
-              <Link
-                href="/"
-                className={`transition ${pathname === '/' ? 'text-amber-400 font-bold' : 'text-slate-300 hover:text-white'}`}
-              >
-                Overview
-              </Link>
-
+              {/* Unauthenticated View: Focused Sign In */}
               <Link
                 href="/login"
                 className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-bold text-xs transition shadow cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
-                <span>Sign In</span>
+                <span>Judicial Sign In</span>
               </Link>
             </>
           )}
