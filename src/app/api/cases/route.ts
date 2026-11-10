@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAuthToken, AUTH_COOKIE_NAME, normalizeRole } from '@/lib/auth-token';
 
+export const dynamic = 'force-dynamic';
+
 export interface CaseRecord {
   id: number;
   caseNumber: string;
