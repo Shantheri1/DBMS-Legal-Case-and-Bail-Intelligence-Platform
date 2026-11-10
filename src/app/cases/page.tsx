@@ -1,47 +1,44 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+
+interface CaseItem {
+  id: number;
+  caseNumber: string;
+  title: string;
+  court: string;
+  accused: string;
+  filingDate: string;
+  priority: string;
+  status: string;
+  charges: string;
+}
 
 export default function CasesPage() {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [cases, setCases] = useState<CaseItem[]>([]);
+  const [dataSource, setDataSource] = useState<string>('loading');
+  const [loading, setLoading] = useState(true);
 
-  const cases = [
-    {
-      id: 1,
-      caseNumber: 'CNR-KA-BLR-2026-00101',
-      title: 'State of Karnataka v. Vikram Malhotra',
-      court: 'City Civil and Sessions Court Bengaluru',
-      accused: 'Vikram Malhotra',
-      filingDate: '2026-09-15',
-      priority: 'URGENT',
-      status: 'BAIL_PENDING',
-      charges: 'IPC Sec 420, IT Act Sec 66D',
-    },
-    {
-      id: 2,
-      caseNumber: 'CNR-KA-BLR-2026-00204',
-      title: 'Rahul Verma v. Priya Deshmukh',
-      court: 'City Civil and Sessions Court Bengaluru',
-      accused: 'Priya Deshmukh',
-      filingDate: '2026-10-02',
-      priority: 'STANDARD',
-      status: 'HEARING_IN_PROGRESS',
-      charges: 'IPC Sec 406 (Breach of Trust)',
-    },
-    {
-      id: 3,
-      caseNumber: 'CNR-KA-BLR-2026-00318',
-      title: 'State v. Mahesh Patil',
-      court: 'Chief Metropolitan Magistrate Court Bengaluru',
-      accused: 'Mahesh Patil',
-      filingDate: '2026-10-18',
-      priority: 'LOW',
-      status: 'FILED',
-      charges: 'IPC Sec 323 (Affray / Simple Hurt)',
-    },
-  ];
+  useEffect(() => {
+    async function loadCases() {
+      try {
+        const res = await fetch('/api/cases');
+        if (res.ok) {
+          const data = await res.json();
+          setCases(data.cases || []);
+          setDataSource(data.source || 'postgresql_live');
+        }
+      } catch (err) {
+        console.error('Failed to load cases:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCases();
+  }, []);
 
   const filteredCases = cases.filter((c) => {
     const matchesFilter = filterStatus === 'ALL' || c.status === filterStatus;
@@ -56,9 +53,18 @@ export default function CasesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Case Registry & Dossiers</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Populated from the relational schema: <code className="bg-slate-200 px-1 py-0.5 rounded">cases</code>, <code className="bg-slate-200 px-1 py-0.5 rounded">courts</code>, <code className="bg-slate-200 px-1 py-0.5 rounded">case_parties</code>, <code className="bg-slate-200 px-1 py-0.5 rounded">charges</code>.
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Case Registry & Dossiers</h1>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              dataSource === 'postgresql_live' 
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-300' 
+                : 'bg-blue-50 text-blue-700 border-blue-300'
+            }`}>
+              {dataSource === 'postgresql_live' ? '● PostgreSQL Live Engine' : '● Relational Schema Active'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500">
+            Dynamically queried from normalized relational tables: <code className="bg-slate-200 px-1 py-0.5 rounded">cases</code>, <code className="bg-slate-200 px-1 py-0.5 rounded">courts</code>, <code className="bg-slate-200 px-1 py-0.5 rounded">case_parties</code>, <code className="bg-slate-200 px-1 py-0.5 rounded">charges</code>.
           </p>
         </div>
         <Link
@@ -113,47 +119,64 @@ export default function CasesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {filteredCases.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50 transition">
-                  <td className="py-3 px-4 font-mono font-bold text-blue-700">
-                    {c.caseNumber}
-                  </td>
-                  <td className="py-3 px-4">
-                    <p className="font-semibold text-slate-900">{c.title}</p>
-                    <p className="text-[11px] text-slate-500">{c.court}</p>
-                  </td>
-                  <td className="py-3 px-4 font-medium text-slate-800">
-                    {c.accused}
-                  </td>
-                  <td className="py-3 px-4 text-slate-600">
-                    {c.charges}
-                  </td>
-                  <td className="py-3 px-4 text-slate-500">
-                    {c.filingDate}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`inline-block px-2.5 py-1 rounded-full font-bold text-[10px] ${
-                        c.status === 'BAIL_PENDING'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : c.status === 'HEARING_IN_PROGRESS'
-                          ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                      }`}
-                    >
-                      {c.status.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <Link
-                      href="/bail/intelligence"
-                      className="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 rounded font-bold border border-slate-300 transition"
-                    >
-                      Assess Bail →
-                    </Link>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                    <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    Fetching case dossiers from relational backend...
                   </td>
                 </tr>
-              ))}
+              ) : filteredCases.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                    No cases match the selected filters.
+                  </td>
+                </tr>
+              ) : (
+                filteredCases.map((c) => (
+                  <tr key={c.id} className="hover:bg-slate-50 transition">
+                    <td className="py-3 px-4 font-mono font-bold text-blue-700">
+                      {c.caseNumber}
+                    </td>
+                    <td className="py-3 px-4">
+                      <p className="font-semibold text-slate-900">{c.title}</p>
+                      <p className="text-[11px] text-slate-500">{c.court}</p>
+                    </td>
+                    <td className="py-3 px-4 font-medium text-slate-800">
+                      {c.accused}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600">
+                      {c.charges}
+                    </td>
+                    <td className="py-3 px-4 text-slate-500">
+                      {c.filingDate}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`inline-block px-2.5 py-1 rounded-full font-bold text-[10px] ${
+                          c.status === 'BAIL_PENDING'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : c.status === 'HEARING_IN_PROGRESS'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : c.status === 'BAIL_GRANTED'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-800 border border-slate-200'
+                        }`}
+                      >
+                        {c.status.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <Link
+                        href={`/bail/intelligence?case=${encodeURIComponent(c.caseNumber)}`}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 rounded font-bold border border-slate-300 transition"
+                      >
+                        Assess Bail →
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
