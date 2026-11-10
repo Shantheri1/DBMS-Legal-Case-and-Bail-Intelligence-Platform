@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyPassword, createAuthToken, normalizeRole, AUTH_COOKIE_NAME } from '@/lib/auth';
-
-interface UserRow {
-  user_id: number;
-  name: string;
-  email: string;
-  password_hash: string;
-  status: string;
-  role_name: string;
-}
+import { findUserByEmail, UserRow } from '@/lib/user-store';
 
 // Fallback seed directory when PostgreSQL is not yet running locally
 const SEED_USERS: UserRow[] = [
@@ -116,8 +108,8 @@ export async function POST(request: NextRequest) {
         userRow = result.rows[0];
       }
     } catch (dbError) {
-      console.warn('[Auth] Database offline or unreachable. Checking verified seed directory fallback...');
-      const match = SEED_USERS.find((u) => u.email.toLowerCase() === sanitizedEmail);
+      console.warn('[Auth] Database offline or unreachable. Checking verified directory fallback...');
+      const match = findUserByEmail(sanitizedEmail);
       if (match) {
         userRow = match;
       }
