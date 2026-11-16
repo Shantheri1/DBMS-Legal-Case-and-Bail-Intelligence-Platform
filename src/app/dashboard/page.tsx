@@ -272,10 +272,20 @@ function DashboardContent() {
           {/* Pending Bail Adjudications Action Table */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
             {adjudicationResult && (
-              <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl space-y-2 text-xs text-emerald-900">
+              <div className={`p-4 rounded-xl space-y-2 text-xs border ${
+                adjudicationResult.decision === 'GRANTED'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                  : 'bg-red-50 border-red-300 text-red-900'
+              }`}>
                 <div className="flex justify-between items-center">
-                  <span className="font-bold uppercase tracking-wider text-[11px] text-emerald-800 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span className={`font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5 ${
+                    adjudicationResult.decision === 'GRANTED' ? 'text-emerald-800' : 'text-red-800'
+                  }`}>
+                    {adjudicationResult.decision === 'GRANTED' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-red-600" />
+                    )}
                     {adjudicationResult.procedureExecuted} Executed Successfully
                   </span>
                   <button onClick={() => setAdjudicationResult(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
@@ -285,12 +295,12 @@ function DashboardContent() {
                   <span className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] ${
                     adjudicationResult.decision === 'GRANTED' ? 'bg-emerald-200 text-emerald-900' : 'bg-red-200 text-red-900'
                   }`}>
-                    {adjudicationResult.decision}
+                    {adjudicationResult.decision === 'GRANTED' ? '✓ BAIL GRANTED' : '✕ BAIL REJECTED'}
                   </span>
                   {adjudicationResult.suretyAmount > 0 && ` (Surety: ₹${adjudicationResult.suretyAmount.toLocaleString('en-IN')})`}
                 </p>
-                <p><strong>Database Trigger:</strong> <code className="bg-emerald-100 px-1 py-0.5 rounded font-mono">{adjudicationResult.triggerExecuted}</code></p>
-                <p className="text-[11px] text-emerald-700">Storage Engine: <strong>{adjudicationResult.storageBackend}</strong></p>
+                <p><strong>Database Trigger:</strong> <code className={`px-1 py-0.5 rounded font-mono ${adjudicationResult.decision === 'GRANTED' ? 'bg-emerald-100' : 'bg-red-100'}`}>{adjudicationResult.triggerExecuted}</code></p>
+                <p className={`text-[11px] ${adjudicationResult.decision === 'GRANTED' ? 'text-emerald-700' : 'text-red-700'}`}>Storage Engine: <strong>{adjudicationResult.storageBackend}</strong></p>
               </div>
             )}
 
@@ -441,10 +451,20 @@ function DashboardContent() {
         <div className="space-y-6">
           {/* Ruling Alert Notification Banner */}
           {adjudicatedPetitions.length > 0 && (
-            <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl flex items-start gap-3 text-emerald-900 text-xs">
-              <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <div className={`p-4 rounded-xl flex items-start gap-3 text-xs border ${
+              adjudicatedPetitions[0].status === 'GRANTED'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                : 'bg-red-50 border-red-300 text-red-900'
+            }`}>
+              {adjudicatedPetitions[0].status === 'GRANTED' ? (
+                <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+              ) : (
+                <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              )}
               <div>
-                <h4 className="font-bold uppercase tracking-wider text-[11px] text-emerald-800">
+                <h4 className={`font-bold uppercase tracking-wider text-[11px] ${
+                  adjudicatedPetitions[0].status === 'GRANTED' ? 'text-emerald-800' : 'text-red-800'
+                }`}>
                   Judicial Ruling Certified & Synced
                 </h4>
                 <p className="mt-0.5">
@@ -455,7 +475,7 @@ function DashboardContent() {
                   }`}>
                     {adjudicatedPetitions[0].status === 'GRANTED' ? '✓ BAIL GRANTED' : '✕ BAIL REJECTED'}
                   </span>
-                  {adjudicatedPetitions[0].suretyAmount ? ` (Surety: ₹${adjudicatedPetitions[0].suretyAmount.toLocaleString('en-IN')})` : ''}.
+                  {adjudicatedPetitions[0].suretyAmount && adjudicatedPetitions[0].suretyAmount > 0 ? ` (Surety: ₹${adjudicatedPetitions[0].suretyAmount.toLocaleString('en-IN')})` : ''}.
                   Order certified and state synchronized across Case Registry and Bench.
                 </p>
               </div>
