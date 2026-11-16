@@ -49,24 +49,14 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = Boolean(session);
   const userRole = session ? normalizeRole(session.role) : null;
 
-  // 3. Handle root path (/): Unauthenticated visitors must log in first!
+  // 3. Handle root path (/): Always direct users to /login portal
   if (pathname === '/') {
-    if (!isAuthenticated) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', '/dashboard');
-      return NextResponse.redirect(loginUrl);
-    } else {
-      const dashboardUrl = new URL('/dashboard', request.url);
-      return NextResponse.redirect(dashboardUrl);
-    }
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // 4. Handle /login route: If already authenticated, redirect to /dashboard
+  // 4. Handle /login route: Always allow access so users can switch accounts or sign in
   if (pathname === '/login') {
-    if (isAuthenticated) {
-      const dashboardUrl = new URL('/dashboard', request.url);
-      return NextResponse.redirect(dashboardUrl);
-    }
     return NextResponse.next();
   }
 
