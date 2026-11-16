@@ -13,6 +13,13 @@ interface CaseItem {
   priority: string;
   status: string;
   charges: string;
+  lastAdjudication?: {
+    decision: string;
+    decisionDate: string;
+    suretyAmount: number;
+    reasoning: string;
+    judgeName: string;
+  };
 }
 
 export default function CasesPage() {
@@ -96,9 +103,10 @@ export default function CasesPage() {
           >
             <option value="ALL">All Statuses</option>
             <option value="BAIL_PENDING">Bail Pending</option>
+            <option value="BAIL_GRANTED">Bail Granted</option>
+            <option value="BAIL_REJECTED">Bail Rejected</option>
             <option value="HEARING_IN_PROGRESS">Hearing in Progress</option>
             <option value="FILED">Filed</option>
-            <option value="BAIL_GRANTED">Bail Granted</option>
           </select>
         </div>
       </div>
@@ -155,16 +163,23 @@ export default function CasesPage() {
                       <span
                         className={`inline-block px-2.5 py-1 rounded-full font-bold text-[10px] ${
                           c.status === 'BAIL_PENDING'
-                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
                             : c.status === 'HEARING_IN_PROGRESS'
-                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-300'
                             : c.status === 'BAIL_GRANTED'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : c.status === 'BAIL_REJECTED'
+                            ? 'bg-red-100 text-red-800 border border-red-300'
                             : 'bg-slate-100 text-slate-800 border border-slate-200'
                         }`}
                       >
-                        {c.status.replace(/_/g, ' ')}
+                        {c.status === 'BAIL_GRANTED' ? '✓ BAIL GRANTED' : c.status === 'BAIL_REJECTED' ? '✕ BAIL REJECTED' : c.status.replace(/_/g, ' ')}
                       </span>
+                      {c.lastAdjudication && c.lastAdjudication.suretyAmount > 0 && (
+                        <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                          Surety: ₹{c.lastAdjudication.suretyAmount.toLocaleString('en-IN')}
+                        </p>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <Link

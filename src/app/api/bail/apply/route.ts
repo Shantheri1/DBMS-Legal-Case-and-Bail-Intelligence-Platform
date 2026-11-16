@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAuthToken, AUTH_COOKIE_NAME, normalizeRole } from '@/lib/auth-token';
+import { applyForBail } from '@/lib/case-store';
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,6 +97,21 @@ export async function POST(request: NextRequest) {
       console.warn('Live database insertion fallback:', dbErr instanceof Error ? dbErr.message : dbErr);
     }
 
+    // Persist in relational case store
+    const advocateName = session.name || 'Advocate';
+    const storePetition = applyForBail({
+      caseNumber,
+      appliedByAdvocate: `${advocateName} (Bar Council)`,
+      bailType: chosenType,
+      custodyDays: parsedCustody,
+      grounds: grounds.trim(),
+      riskScore: calculatedRisk,
+    });
+
+    if (!dbSuccess && storePetition) {
+      newBailId = storePetition.bailId;
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Bail petition instituted and recorded successfully.',
@@ -105,7 +121,8 @@ export async function POST(request: NextRequest) {
       riskScore: calculatedRisk,
       status: 'PENDING',
       adjudicationStage: 'LISTED_FOR_ARGUMENTS',
-      storageBackend: dbSuccess ? 'PostgreSQL Live ACID Core' : 'Relational Seed Sandbox',
+      storageBackend: dbSuccess ? 'PostgreSQL Live ACID Core + Persistent Case Store' : 'Persistent Relational Case Store',
+      petition: storePetition,
     });
   } catch (error) {
     console.error('Error in /api/bail/apply:', error);

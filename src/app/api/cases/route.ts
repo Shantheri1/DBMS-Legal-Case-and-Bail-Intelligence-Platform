@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAuthToken, AUTH_COOKIE_NAME, normalizeRole } from '@/lib/auth-token';
+import { getCases } from '@/lib/case-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,8 +98,9 @@ export async function GET(request: NextRequest) {
       console.warn('PostgreSQL query fallback for /api/cases:', dbErr instanceof Error ? dbErr.message : dbErr);
     }
 
-    // Return fallback seed cases if database is not reachable
-    return NextResponse.json({ cases: FALLBACK_CASES, source: 'seed_fallback' });
+    // Return persistent cases from relational case store
+    const storeCases = getCases();
+    return NextResponse.json({ cases: storeCases, source: 'case_store' });
   } catch (error) {
     console.error('Error in /api/cases:', error);
     return NextResponse.json({ error: 'Failed to fetch cases' }, { status: 500 });

@@ -1,0 +1,69 @@
+{
+  "cases": [
+    {
+      "id": 1,
+      "caseNumber": "CNR-KA-BLR-2026-00101",
+      "title": "State of Karnataka v. Vikram Malhotra",
+      "court": "City Civil and Sessions Court Bengaluru",
+      "accused": "Vikram Malhotra",
+      "filingDate": "2026-09-15",
+      "priority": "URGENT",
+      "status": "BAIL_PENDING",
+      "charges": "IPC Sec 420, IT Act Sec 66D"
+    },
+    {
+      "id": 2,
+      "caseNumber": "CNR-KA-BLR-2026-00204",
+      "title": "Rahul Verma v. Priya Deshmukh",
+      "court": "City Civil and Sessions Court Bengaluru",
+      "accused": "Priya Deshmukh",
+      "filingDate": "2026-10-02",
+      "priority": "STANDARD",
+      "status": "HEARING_IN_PROGRESS",
+      "charges": "IPC Sec 406 (Breach of Trust)"
+    },
+    {
+      "id": 3,
+      "caseNumber": "CNR-KA-BLR-2026-00318",
+      "title": "State v. Mahesh Patil",
+      "court": "Chief Metropolitan Magistrate Court Bengaluru",
+      "accused": "Mahesh Patil",
+      "filingDate": "2026-10-18",
+      "priority": "LOW",
+      "status": "FILED",
+      "charges": "IPC Sec 323 (Affray / Simple Hurt)"
+    }
+  ],
+  "petitions": [
+    {
+      "bailId": 1,
+      "caseId": 1,
+      "caseNumber": "CNR-KA-BLR-2026-00101",
+      "caseTitle": "State of Karnataka v. Vikram Malhotra (Sec 420 IPC, 66D IT Act)",
+      "applicantName": "Vikram Malhotra",
+      "courtName": "City Civil and Sessions Court Bengaluru",
+      "bailType": "REGULAR",
+      "grounds": "Applicant in custody for 45 days. Complete charge sheet filed; digital evidence frozen. Clean antecedents and deep local roots in Bengaluru.",
+      "custodyDays": 45,
+      "riskScore": 35,
+      "status": "PENDING",
+      "appliedDate": "2026-10-20",
+      "appliedByAdvocate": "Adv. Shantheni Shenoy (BCI/KA/428)"
+    },
+    {
+      "bailId": 2,
+      "caseId": 2,
+      "caseNumber": "CNR-KA-BLR-2026-00204",
+      "caseTitle": "Rahul Verma v. Priya Deshmukh (Sec 406 IPC)",
+      "applicantName": "Priya Deshmukh",
+      "courtName": "City Civil and Sessions Court Bengaluru",
+      "bailType": "ANTICIPATORY",
+      "grounds": "Commercial dispute arising from escrow partnership. Dispute is civil in nature; applicant fully cooperating with investigation.",
+      "custodyDays": 0,
+      "riskScore": 20,
+      "status": "PENDING",
+      "appliedDate": "2026-10-25",
+      "appliedByAdvocate": "Adv. Shriranjini Kumar (BCI/KA/447)"
+    }
+  ]
+}

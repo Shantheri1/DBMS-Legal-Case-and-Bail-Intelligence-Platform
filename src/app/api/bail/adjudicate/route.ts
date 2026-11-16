@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAuthToken, AUTH_COOKIE_NAME, normalizeRole } from '@/lib/auth-token';
+import { adjudicateBail } from '@/lib/case-store';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +35,6 @@ export async function POST(request: NextRequest) {
     const chosenDecision = validDecisions.includes(decision) ? decision : 'GRANTED';
 
     let dbExecuted = false;
-    let newDecisionId = Math.floor(Math.random() * 500) + 1;
 
     try {
       // Execute stored procedure in PostgreSQL: CALL sp_adjudicate_bail(...)
@@ -54,6 +54,16 @@ export async function POST(request: NextRequest) {
       console.warn('PostgreSQL stored procedure fallback:', dbErr instanceof Error ? dbErr.message : dbErr);
     }
 
+    // Persist and synchronize state in the relational case store
+    const judgeName = session.name || 'Hon. Justice Rajesh Sharma';
+    const storeResult = adjudicateBail(
+      Number(bailId),
+      chosenDecision as any,
+      reasoning,
+      Number(suretyAmount) || 0,
+      judgeName
+    );
+
     const finalCaseStatus = (chosenDecision === 'GRANTED' || chosenDecision === 'CONDITIONAL_RELEASE') 
       ? 'BAIL_GRANTED' 
       : 'BAIL_REJECTED';
@@ -67,7 +77,9 @@ export async function POST(request: NextRequest) {
       reasoning,
       suretyAmount,
       caseStatusSynchronized: finalCaseStatus,
-      storageBackend: dbExecuted ? 'PostgreSQL Live Stored Procedure' : 'Relational Seed Sandbox',
+      storageBackend: dbExecuted ? 'PostgreSQL Live Stored Procedure + Persistent Case Store' : 'Persistent Relational Case Store',
+      petition: storeResult.petition,
+      caseRecord: storeResult.caseRecord,
     });
   } catch (error) {
     console.error('Error in /api/bail/adjudicate:', error);
