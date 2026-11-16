@@ -20,7 +20,10 @@ import {
   FileCheck,
   CheckCircle2,
   XCircle,
-  Award
+  Award,
+  Trash2,
+  Edit3,
+  UserCheck
 } from 'lucide-react';
 
 interface AuthUser {
@@ -70,6 +73,14 @@ interface CaseItem {
   };
 }
 
+interface AdminUser {
+  user_id: number;
+  name: string;
+  email: string;
+  status: string;
+  role_name: string;
+}
+
 function DashboardContent() {
   const searchParams = useSearchParams();
   const deniedParam = searchParams.get('denied');
@@ -86,15 +97,20 @@ function DashboardContent() {
   const [pendingPetitions, setPendingPetitions] = useState<BailPetition[]>([]);
   const [adjudicatedPetitions, setAdjudicatedPetitions] = useState<BailPetition[]>([]);
   const [cases, setCases] = useState<CaseItem[]>([]);
-  const [dataLoading, setDataLoading] = useState(false);
+  
+  // Live admin user management state
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [selectedRoleUpdate, setSelectedRoleUpdate] = useState<string>('LAWYER');
+  const [adminActionMsg, setAdminActionMsg] = useState<string | null>(null);
 
-  // Fetch live petitions and cases
+  // Fetch live petitions, cases, and admin users
   const loadData = useCallback(async () => {
-    setDataLoading(true);
     try {
-      const [petRes, casesRes] = await Promise.all([
+      const [petRes, casesRes, usersRes] = await Promise.all([
         fetch('/api/bail/petitions'),
         fetch('/api/cases'),
+        fetch('/api/admin/users'),
       ]);
 
       if (petRes.ok) {
@@ -108,10 +124,13 @@ function DashboardContent() {
         const casesData = await casesRes.json();
         setCases(casesData.cases || []);
       }
+
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setAdminUsers(usersData.users || []);
+      }
     } catch (err) {
       console.error('Failed to load petitions and cases:', err);
-    } finally {
-      setDataLoading(false);
     }
   }, []);
 
@@ -138,6 +157,48 @@ function DashboardContent() {
       console.error('Error during adjudication:', err);
     } finally {
       setAdjudicatingId(null);
+    }
+  };
+
+  // Admin user role update handler
+  const handleUpdateRole = async (userId: number, newRole: string) => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newRole }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAdminActionMsg(data.message || 'User role successfully updated in database.');
+        setEditingUserId(null);
+        await loadData();
+      } else {
+        alert(data.error || 'Failed to update role.');
+      }
+    } catch (err) {
+      console.error('Failed to update role:', err);
+    }
+  };
+
+  // Admin user delete / revoke handler
+  const handleDeleteUser = async (userId: number, name: string) => {
+    if (!confirm(`Are you sure you want to delete and revoke ${name} (User #${userId}) from the system registry?`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/users?userId=${userId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAdminActionMsg(data.message || 'User successfully removed from registry.');
+        await loadData();
+      } else {
+        alert(data.error || 'Failed to delete user.');
+      }
+    } catch (err) {
+      console.error('Failed to delete user:', err);
     }
   };
 
@@ -288,7 +349,7 @@ function DashboardContent() {
                     )}
                     {adjudicationResult.procedureExecuted} Executed Successfully
                   </span>
-                  <button onClick={() => setAdjudicationResult(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                  <button onClick={() => setAdjudicationResult(null)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
                 </div>
                 <p>
                   <strong>Outcome Pronounced:</strong>{' '}
@@ -371,14 +432,14 @@ function DashboardContent() {
                       <button
                         disabled={adjudicatingId === petition.bailId}
                         onClick={() => handleAdjudicate(petition.bailId, 'GRANTED')}
-                        className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition shadow disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition shadow disabled:opacity-50 cursor-pointer"
                       >
                         {adjudicatingId === petition.bailId ? 'Executing SP...' : 'Grant Bail'}
                       </button>
                       <button
                         disabled={adjudicatingId === petition.bailId}
                         onClick={() => handleAdjudicate(petition.bailId, 'REJECTED')}
-                        className="px-3 py-1.5 text-xs font-bold rounded-lg bg-red-600 text-white hover:bg-red-500 transition shadow disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs font-bold rounded-lg bg-red-600 text-white hover:bg-red-500 transition shadow disabled:opacity-50 cursor-pointer"
                       >
                         {adjudicatingId === petition.bailId ? 'Executing SP...' : 'Reject Bail'}
                       </button>
@@ -687,7 +748,9 @@ function DashboardContent() {
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm text-center">
               <Gavel className="w-5 h-5 text-amber-600 mx-auto mb-1" />
               <span className="text-xs font-bold text-slate-500 uppercase">Active Judges</span>
-              <p className="text-2xl font-black text-slate-900 mt-1">3</p>
+              <p className="text-2xl font-black text-slate-900 mt-1">
+                {adminUsers.filter((u) => u.role_name === 'JUDGE').length || 3}
+              </p>
             </div>
 
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm text-center">
@@ -703,21 +766,32 @@ function DashboardContent() {
             </div>
           </div>
 
-          {/* User & Role Management Table */}
+          {/* Interactive User & Role Management (RBAC) Table */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <h2 className="text-base font-bold text-slate-900">
                   User & Role-Based Access Control (RBAC) Management
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Provisioned system accounts mapped to database roles in <code className="font-mono bg-slate-100 px-1 py-0.5 rounded">users</code> and <code className="font-mono bg-slate-100 px-1 py-0.5 rounded">roles</code> tables.
+                  Live administration table: Update roles or delete accounts with immediate database persistence.
                 </p>
               </div>
-              <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">
-                System Active
-              </span>
+              <NextLink
+                href="/register"
+                className="px-3 py-1.5 bg-amber-500 text-slate-950 font-bold text-xs rounded-lg hover:bg-amber-400 transition shadow flex items-center gap-1"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>+ Register New Account</span>
+              </NextLink>
             </div>
+
+            {adminActionMsg && (
+              <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-lg text-xs text-emerald-800 flex justify-between items-center">
+                <span>✓ {adminActionMsg}</span>
+                <button onClick={() => setAdminActionMsg(null)} className="text-emerald-700 font-bold cursor-pointer">✕</button>
+              </div>
+            )}
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
@@ -728,44 +802,100 @@ function DashboardContent() {
                     <th className="py-2.5 px-3">Email Address</th>
                     <th className="py-2.5 px-3">Database Role</th>
                     <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
-                  <tr>
-                    <td className="py-2.5 px-3 font-mono">1</td>
-                    <td className="py-2.5 px-3 font-medium">System Admin</td>
-                    <td className="py-2.5 px-3 text-slate-600">admin@jurispredict.gov.in</td>
-                    <td className="py-2.5 px-3 font-bold text-purple-700">ADMIN</td>
-                    <td className="py-2.5 px-3"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">ACTIVE</span></td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 px-3 font-mono">2</td>
-                    <td className="py-2.5 px-3 font-medium">Hon. Justice Rajesh Sharma</td>
-                    <td className="py-2.5 px-3 text-slate-600">judge.sharma@karnatakacourts.gov.in</td>
-                    <td className="py-2.5 px-3 font-bold text-blue-700">JUDGE</td>
-                    <td className="py-2.5 px-3"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">ACTIVE</span></td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 px-3 font-mono">4</td>
-                    <td className="py-2.5 px-3 font-medium">Adv. Shantheni Shenoy</td>
-                    <td className="py-2.5 px-3 text-slate-600">shantheni.adv@barcouncil.org</td>
-                    <td className="py-2.5 px-3 font-bold text-amber-700">ADVOCATE (LAWYER)</td>
-                    <td className="py-2.5 px-3"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">ACTIVE</span></td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 px-3 font-mono">5</td>
-                    <td className="py-2.5 px-3 font-medium">Adv. Shriranjini Kumar</td>
-                    <td className="py-2.5 px-3 text-slate-600">shriranjini.adv@barcouncil.org</td>
-                    <td className="py-2.5 px-3 font-bold text-amber-700">ADVOCATE (LAWYER)</td>
-                    <td className="py-2.5 px-3"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">ACTIVE</span></td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 px-3 font-mono">6</td>
-                    <td className="py-2.5 px-3 font-medium">Ramesh Babu (Registrar)</td>
-                    <td className="py-2.5 px-3 text-slate-600">registry.blr@karnatakacourts.gov.in</td>
-                    <td className="py-2.5 px-3 font-bold text-slate-700">REGISTRAR (CLERK)</td>
-                    <td className="py-2.5 px-3"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">ACTIVE</span></td>
-                  </tr>
+                  {adminUsers.map((u) => (
+                    <tr key={u.user_id} className="hover:bg-slate-50 transition">
+                      <td className="py-2.5 px-3 font-mono font-bold text-slate-700">#{u.user_id}</td>
+                      <td className="py-2.5 px-3 font-medium text-slate-900">{u.name}</td>
+                      <td className="py-2.5 px-3 font-mono text-slate-600 text-[11px]">{u.email}</td>
+                      
+                      {/* Role Column: Edit Mode vs Badge */}
+                      <td className="py-2.5 px-3">
+                        {editingUserId === u.user_id ? (
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              value={selectedRoleUpdate}
+                              onChange={(e) => setSelectedRoleUpdate(e.target.value)}
+                              className="text-xs border border-amber-400 rounded px-2 py-1 bg-white font-bold"
+                            >
+                              <option value="JUDGE">JUDGE</option>
+                              <option value="LAWYER">LAWYER</option>
+                              <option value="CLERK">CLERK</option>
+                              <option value="ADMIN">ADMIN</option>
+                            </select>
+                            <button
+                              onClick={() => handleUpdateRole(u.user_id, selectedRoleUpdate)}
+                              className="px-2 py-1 bg-emerald-600 text-white rounded text-[10px] font-bold hover:bg-emerald-500 cursor-pointer"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingUserId(null)}
+                              className="px-2 py-1 bg-slate-200 text-slate-700 rounded text-[10px] font-bold hover:bg-slate-300 cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <span className={`inline-block px-2 py-0.5 rounded font-bold text-[10px] ${
+                            u.role_name === 'ADMIN'
+                              ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                              : u.role_name === 'JUDGE'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : u.role_name === 'LAWYER'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : 'bg-slate-100 text-slate-800 border border-slate-200'
+                          }`}>
+                            {u.role_name}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Status Column */}
+                      <td className="py-2.5 px-3">
+                        <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
+                          u.status === 'ACTIVE'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {u.status || 'ACTIVE'}
+                        </span>
+                      </td>
+
+                      {/* Interactive Actions Column: Update Role & Delete Account */}
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {editingUserId !== u.user_id && (
+                            <button
+                              onClick={() => {
+                                setEditingUserId(u.user_id);
+                                setSelectedRoleUpdate(u.role_name || 'LAWYER');
+                              }}
+                              className="px-2 py-1 bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 rounded font-bold text-[10px] border border-slate-200 transition flex items-center gap-1 cursor-pointer"
+                              title="Update Role"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              <span>Edit Role</span>
+                            </button>
+                          )}
+
+                          {u.user_id !== 1 && (
+                            <button
+                              onClick={() => handleDeleteUser(u.user_id, u.name)}
+                              className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded font-bold text-[10px] border border-red-200 transition flex items-center gap-1 cursor-pointer"
+                              title="Delete Role & Account"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>Delete</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

@@ -116,3 +116,48 @@ export function registerNewUserInMemory(user: UserRow): void {
   }
   saveUsersToDisk(registeredUsersDirectory);
 }
+
+export function getAllUsers(): UserRow[] {
+  registeredUsersDirectory = loadUsersFromDisk();
+  return registeredUsersDirectory;
+}
+
+export function updateUser(
+  userId: number,
+  updates: { role_name?: string; status?: string; name?: string }
+): { success: boolean; user?: UserRow } {
+  registeredUsersDirectory = loadUsersFromDisk();
+  const target = registeredUsersDirectory.find((u) => u.user_id === Number(userId));
+  if (!target) {
+    return { success: false };
+  }
+
+  if (updates.role_name) {
+    target.role_name = updates.role_name.toUpperCase();
+  }
+  if (updates.status) {
+    target.status = updates.status.toUpperCase();
+  }
+  if (updates.name) {
+    target.name = updates.name.trim();
+  }
+
+  saveUsersToDisk(registeredUsersDirectory);
+  return { success: true, user: target };
+}
+
+export function deleteUser(userId: number): { success: boolean } {
+  registeredUsersDirectory = loadUsersFromDisk();
+  const initialLength = registeredUsersDirectory.length;
+  // Do not allow deleting master system admin (user_id === 1) to prevent lockout
+  if (Number(userId) === 1) {
+    return { success: false };
+  }
+
+  registeredUsersDirectory = registeredUsersDirectory.filter((u) => u.user_id !== Number(userId));
+  if (registeredUsersDirectory.length < initialLength) {
+    saveUsersToDisk(registeredUsersDirectory);
+    return { success: true };
+  }
+  return { success: false };
+}

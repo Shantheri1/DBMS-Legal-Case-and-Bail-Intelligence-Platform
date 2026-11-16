@@ -1,0 +1,52 @@
+[
+  {
+    "user_id": 1,
+    "name": "System Admin",
+    "email": "admin@jurispredict.gov.in",
+    "password_hash": "$2a$10$/cSyP/vPvVcrJN/aZYJ0e.nDONuyHYXmboVHjUPB74woL3eio9j9W",
+    "status": "ACTIVE",
+    "role_name": "ADMIN"
+  },
+  {
+    "user_id": 2,
+    "name": "Hon. Justice Rajesh Sharma",
+    "email": "judge.sharma@karnatakacourts.gov.in",
+    "password_hash": "$2a$10$/cSyP/vPvVcrJN/aZYJ0e.nDONuyHYXmboVHjUPB74woL3eio9j9W",
+    "status": "ACTIVE",
+    "role_name": "JUDGE",
+    "court_id": 1
+  },
+  {
+    "user_id": 3,
+    "name": "Hon. Justice Anuradha Banerjee",
+    "email": "judge.banerjee@karnatakacourts.gov.in",
+    "password_hash": "$2a$10$/cSyP/vPvVcrJN/aZYJ0e.nDONuyHYXmboVHjUPB74woL3eio9j9W",
+    "status": "ACTIVE",
+    "role_name": "JUDGE",
+    "court_id": 2
+  },
+  {
+    "user_id": 4,
+    "name": "Adv. Shantheni Shenoy",
+    "email": "shantheni.adv@barcouncil.org",
+    "password_hash": "$2a$10$/cSyP/vPvVcrJN/aZYJ0e.nDONuyHYXmboVHjUPB74woL3eio9j9W",
+    "status": "ACTIVE",
+    "role_name": "LAWYER"
+  },
+  {
+    "user_id": 5,
+    "name": "Adv. Shriranjini Kumar",
+    "email": "shriranjini.adv@barcouncil.org",
+    "password_hash": "$2a$10$/cSyP/vPvVcrJN/aZYJ0e.nDONuyHYXmboVHjUPB74woL3eio9j9W",
+    "status": "ACTIVE",
+    "role_name": "LAWYER"
+  },
+  {
+    "user_id": 6,
+    "name": "Ramesh Babu (Registrar)",
+    "email": "registry.blr@karnatakacourts.gov.in",
+    "password_hash": "$2a$10$/cSyP/vPvVcrJN/aZYJ0e.nDONuyHYXmboVHjUPB74woL3eio9j9W",
+    "status": "ACTIVE",
+    "role_name": "CLERK"
+  }
+]
