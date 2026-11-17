@@ -17,15 +17,6 @@
     "court_id": 1
   },
   {
-    "user_id": 3,
-    "name": "Hon. Justice Anuradha Banerjee",
-    "email": "judge.banerjee@karnatakacourts.gov.in",
-    "password_hash": "$2a$10$/cSyP/vPvVcrJN/aZYJ0e.nDONuyHYXmboVHjUPB74woL3eio9j9W",
-    "status": "ACTIVE",
-    "role_name": "JUDGE",
-    "court_id": 2
-  },
-  {
     "user_id": 4,
     "name": "Adv. Shantheni Shenoy",
     "email": "shantheni.adv@barcouncil.org",
