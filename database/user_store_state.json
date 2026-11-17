@@ -39,5 +39,15 @@
     "password_hash": "$2a$10$/cSyP/vPvVcrJN/aZYJ0e.nDONuyHYXmboVHjUPB74woL3eio9j9W",
     "status": "ACTIVE",
     "role_name": "CLERK"
+  },
+  {
+    "user_id": 2080,
+    "name": "qwerty",
+    "email": "abcd@gmail.com",
+    "password_hash": "$2a$10$3x6uGYFdT3hPSFmk2VLC6.Zkw5GQ6KsbK/soCMRFNsSEsc1mF25R.",
+    "status": "ACTIVE",
+    "role_name": "LAWYER",
+    "phone": "1234567890",
+    "court_id": 1
   }
 ]

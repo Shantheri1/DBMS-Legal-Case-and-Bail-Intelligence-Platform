@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 interface PrecedentMatch {
   citation: string;
@@ -11,18 +11,8 @@ interface PrecedentMatch {
   similarity: number;
 }
 
-interface CaseItem {
-  caseNumber: string;
-  title: string;
-}
-
 export default function BailIntelligencePage() {
   const [caseNumber, setCaseNumber] = useState('CNR-KA-BLR-2026-00101');
-  const [cases, setCases] = useState<CaseItem[]>([
-    { caseNumber: 'CNR-KA-BLR-2026-00101', title: 'State v. Vikram Malhotra' },
-    { caseNumber: 'CNR-KA-BLR-2026-00204', title: 'Rahul Verma v. Priya Deshmukh' },
-    { caseNumber: 'CNR-KA-BLR-2026-00318', title: 'State v. Mahesh Patil' },
-  ]);
   const [bailGrounds, setBailGrounds] = useState(
     'The accused has spent 45 days in judicial custody under Section 420 IPC and Section 66D IT Act. Investigation is complete, charge sheet submitted, electronic equipment seized. Applicant has no prior criminal antecedents, permanent local resident, ready to surrender passport.'
   );
@@ -35,31 +25,6 @@ export default function BailIntelligencePage() {
     nonBailableCount: number;
     precedents: PrecedentMatch[];
   } | null>(null);
-
-  useEffect(() => {
-    async function loadCases() {
-      try {
-        const res = await fetch('/api/cases');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.cases && data.cases.length > 0) {
-            setCases(data.cases);
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load cases:', err);
-      }
-    }
-    loadCases();
-
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const urlCase = params.get('case');
-      if (urlCase) {
-        setCaseNumber(urlCase);
-      }
-    }
-  }, []);
 
   const handleRunIntelligence = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,11 +111,9 @@ export default function BailIntelligencePage() {
                 onChange={(e) => setCaseNumber(e.target.value)}
                 className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
               >
-                {cases.map((c) => (
-                  <option key={c.caseNumber} value={c.caseNumber}>
-                    {c.caseNumber} ({c.title})
-                  </option>
-                ))}
+                <option value="CNR-KA-BLR-2026-00101">CNR-KA-BLR-2026-00101 (State v. Vikram Malhotra)</option>
+                <option value="CNR-KA-BLR-2026-00204">CNR-KA-BLR-2026-00204 (Rahul Verma v. Priya Deshmukh)</option>
+                <option value="CNR-KA-BLR-2026-00318">CNR-KA-BLR-2026-00318 (State v. Mahesh Patil)</option>
               </select>
             </div>
 

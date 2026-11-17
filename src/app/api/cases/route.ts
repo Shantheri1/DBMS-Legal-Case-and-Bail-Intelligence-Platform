@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAuthToken, AUTH_COOKIE_NAME, normalizeRole } from '@/lib/auth-token';
-import { getCases, createCase } from '@/lib/case-store';
+import { getCases } from '@/lib/case-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,84 +104,5 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error in /api/cases:', error);
     return NextResponse.json({ error: 'Failed to fetch cases' }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized: Session required' }, { status: 401 });
-    }
-
-    const session = await verifyAuthToken(token);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized: Session invalid' }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { caseNumber, title, court, accused, charges, priority } = body;
-
-    if (!caseNumber || !title || !accused) {
-      return NextResponse.json(
-        { error: 'CNR Number, Case Title, and Accused Name are required.' },
-        { status: 400 }
-      );
-    }
-
-    const cleanCNR = caseNumber.trim().toUpperCase();
-    const cleanTitle = title.trim();
-    const cleanAccused = accused.trim();
-    const cleanCourt = court?.trim() || 'City Civil and Sessions Court Bengaluru';
-    const cleanCharges = charges?.trim() || 'IPC Sec 420';
-    const cleanPriority = priority?.trim() || 'STANDARD';
-
-    // Check duplicate case number
-    const existingCases = getCases();
-    if (existingCases.some((c) => c.caseNumber.toUpperCase() === cleanCNR)) {
-      return NextResponse.json(
-        { error: `Case with CNR ${cleanCNR} already exists in registry.` },
-        { status: 409 }
-      );
-    }
-
-    // Try inserting into PostgreSQL if live
-    try {
-      const courtResult = await query<{ court_id: number }>(
-        `SELECT court_id FROM courts WHERE court_name ILIKE $1 LIMIT 1`,
-        [`%${cleanCourt.split(' ')[0]}%`]
-      );
-      const courtId = courtResult.rows[0]?.court_id || 2;
-
-      await query(
-        `INSERT INTO cases (court_id, filed_by, case_number, title, filing_date, description, status, priority_level)
-         VALUES ($1, $2, $3, $4, CURRENT_DATE, $5, 'FILED', $6)
-         ON CONFLICT (case_number) DO NOTHING`,
-        [courtId, session.userId || 4, cleanCNR, cleanTitle, cleanCharges, cleanPriority]
-      );
-    } catch (dbErr) {
-      console.warn('PostgreSQL insert fallback for /api/cases:', dbErr instanceof Error ? dbErr.message : dbErr);
-    }
-
-    const newCase = createCase({
-      caseNumber: cleanCNR,
-      title: cleanTitle,
-      court: cleanCourt,
-      accused: cleanAccused,
-      charges: cleanCharges,
-      priority: cleanPriority,
-    });
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'New case successfully registered in docket.',
-        case: newCase,
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('Error creating case in /api/cases:', error);
-    return NextResponse.json({ error: 'Failed to create case in registry' }, { status: 500 });
   }
 }

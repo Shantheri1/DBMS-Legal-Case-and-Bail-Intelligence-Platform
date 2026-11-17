@@ -256,34 +256,3 @@ export function adjudicateBail(
   saveState(memoryState);
   return { success: true, petition, caseRecord };
 }
-
-export function createCase(newCase: {
-  caseNumber: string;
-  title: string;
-  court?: string;
-  accused: string;
-  charges?: string;
-  priority?: string;
-}): CaseRecord {
-  memoryState = loadState();
-
-  const nextId = memoryState.cases.length > 0
-    ? Math.max(...memoryState.cases.map((c) => c.id)) + 1
-    : 1;
-
-  const caseItem: CaseRecord = {
-    id: nextId,
-    caseNumber: newCase.caseNumber.trim().toUpperCase(),
-    title: newCase.title.trim(),
-    court: newCase.court?.trim() || 'City Civil and Sessions Court Bengaluru',
-    accused: newCase.accused.trim(),
-    filingDate: new Date().toISOString().split('T')[0],
-    priority: newCase.priority || 'STANDARD',
-    status: 'FILED',
-    charges: newCase.charges?.trim() || 'IPC Sec 420',
-  };
-
-  memoryState.cases.push(caseItem);
-  saveState(memoryState);
-  return caseItem;
-}

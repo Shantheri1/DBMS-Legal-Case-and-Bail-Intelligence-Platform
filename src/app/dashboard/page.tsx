@@ -23,8 +23,11 @@ import {
   Award,
   Trash2,
   Edit3,
-  UserCheck
+  UserCheck,
+  Download,
+  Printer,
 } from 'lucide-react';
+import CertifiedBailOrderModal, { BailOrderData } from '@/components/CertifiedBailOrderModal';
 
 interface AuthUser {
   userId: number;
@@ -91,6 +94,8 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [adjudicationResult, setAdjudicationResult] = useState<any>(null);
   const [adjudicatingId, setAdjudicatingId] = useState<number | null>(null);
+  const [selectedBailOrder, setSelectedBailOrder] = useState<BailOrderData | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   // Live state synchronized with relational case store
   const [allPetitions, setAllPetitions] = useState<BailPetition[]>([]);
@@ -362,6 +367,35 @@ function DashboardContent() {
                 </p>
                 <p><strong>Database Trigger:</strong> <code className={`px-1 py-0.5 rounded font-mono ${adjudicationResult.decision === 'GRANTED' ? 'bg-emerald-100' : 'bg-red-100'}`}>{adjudicationResult.triggerExecuted}</code></p>
                 <p className={`text-[11px] ${adjudicationResult.decision === 'GRANTED' ? 'text-emerald-700' : 'text-red-700'}`}>Storage Engine: <strong>{adjudicationResult.storageBackend}</strong></p>
+
+                {adjudicationResult.decision === 'GRANTED' && (
+                  <div className="pt-2">
+                    <button
+                      onClick={() => {
+                        const targetPetition = allPetitions.find((p) => p.bailId === adjudicationResult.bailId) ||
+                          pendingPetitions.find((p) => p.bailId === adjudicationResult.bailId) ||
+                          adjudicatedPetitions.find((p) => p.bailId === adjudicationResult.bailId);
+                        setSelectedBailOrder({
+                          bailId: adjudicationResult.bailId || 1,
+                          caseNumber: targetPetition?.caseNumber || 'CNR-KA-BLR-2026-00101',
+                          caseTitle: targetPetition?.caseTitle || 'State of Karnataka v. Accused',
+                          applicantName: targetPetition?.applicantName || 'Accused Person',
+                          courtName: targetPetition?.courtName || 'City Civil and Sessions Court Bengaluru',
+                          bailType: targetPetition?.bailType || 'REGULAR',
+                          suretyAmount: adjudicationResult.suretyAmount || 50000,
+                          reasoning: adjudicationResult.reasoning || 'Regular bail granted with solvent surety and passport surrender under Section 439 CrPC.',
+                          judgeName: currentUser?.name || 'Hon. Justice Rajesh Sharma',
+                          decisionDate: new Date().toISOString().split('T')[0],
+                        });
+                        setIsOrderModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <FileCheck className="w-4 h-4 text-emerald-200" />
+                      <span>Download Certified Bail Decree (PDF with QR Code) →</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -494,9 +528,34 @@ function DashboardContent() {
                         Pronounced by: <strong>{adj.adjudicatedByJudge || 'Hon. Judicial Bench'}</strong> on {adj.decisionDate || 'Today'}
                       </p>
                     </div>
-                    <span className="text-[11px] font-mono text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
-                      Order Certified
-                    </span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {adj.status === 'GRANTED' && (
+                        <button
+                          onClick={() => {
+                            setSelectedBailOrder({
+                              bailId: adj.bailId,
+                              caseNumber: adj.caseNumber,
+                              caseTitle: adj.caseTitle || `${adj.caseNumber} (Regular Bail)`,
+                              applicantName: adj.applicantName || 'Accused Person',
+                              courtName: adj.courtName || 'City Civil and Sessions Court Bengaluru',
+                              bailType: adj.bailType || 'REGULAR',
+                              suretyAmount: adj.suretyAmount || 50000,
+                              reasoning: adj.reasoning || 'Regular bail granted with solvent surety and passport surrender under Section 439 CrPC.',
+                              judgeName: adj.adjudicatedByJudge || 'Hon. Justice Rajesh Sharma',
+                              decisionDate: adj.decisionDate || new Date().toISOString().split('T')[0],
+                            });
+                            setIsOrderModalOpen(true);
+                          }}
+                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                          <span>Download Order</span>
+                        </button>
+                      )}
+                      <span className="text-[11px] font-mono text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                        Order Certified
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -539,6 +598,33 @@ function DashboardContent() {
                   {adjudicatedPetitions[0].suretyAmount && adjudicatedPetitions[0].suretyAmount > 0 ? ` (Surety: ₹${adjudicatedPetitions[0].suretyAmount.toLocaleString('en-IN')})` : ''}.
                   Order certified and state synchronized across Case Registry and Bench.
                 </p>
+
+                {adjudicatedPetitions[0].status === 'GRANTED' && (
+                  <div className="pt-2">
+                    <button
+                      onClick={() => {
+                        const adj = adjudicatedPetitions[0];
+                        setSelectedBailOrder({
+                          bailId: adj.bailId,
+                          caseNumber: adj.caseNumber,
+                          caseTitle: adj.caseTitle || `${adj.caseNumber} (Regular Bail)`,
+                          applicantName: adj.applicantName || 'Accused Person',
+                          courtName: adj.courtName || 'City Civil and Sessions Court Bengaluru',
+                          bailType: adj.bailType || 'REGULAR',
+                          suretyAmount: adj.suretyAmount || 50000,
+                          reasoning: adj.reasoning || 'Regular bail granted with solvent surety under Section 439 CrPC.',
+                          judgeName: adj.adjudicatedByJudge || 'Hon. Justice Rajesh Sharma',
+                          decisionDate: adj.decisionDate || new Date().toISOString().split('T')[0],
+                        });
+                        setIsOrderModalOpen(true);
+                      }}
+                      className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer inline-flex"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Certified Bail Order for Prison Release (PDF)</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -902,6 +988,13 @@ function DashboardContent() {
           </div>
         </div>
       )}
+
+      {/* Official Certified Bail Order & Decree Modal (with QR Code) */}
+      <CertifiedBailOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        orderData={selectedBailOrder}
+      />
     </div>
   );
 }

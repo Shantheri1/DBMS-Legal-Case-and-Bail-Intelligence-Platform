@@ -9,7 +9,14 @@
       "filingDate": "2026-09-15",
       "priority": "URGENT",
       "status": "BAIL_PENDING",
-      "charges": "IPC Sec 420, IT Act Sec 66D"
+      "charges": "IPC Sec 420, IT Act Sec 66D",
+      "lastAdjudication": {
+        "decision": "GRANTED",
+        "decisionDate": "2026-11-17",
+        "suretyAmount": 50000,
+        "reasoning": "Investigation substantially completed; custody no longer indispensable for trial progression. Bail granted under Article 21 precedent (Satender Kumar Antil v. CBI).",
+        "judgeName": "Hon. Justice Rajesh Sharma"
+      }
     },
     {
       "id": 2,
@@ -19,8 +26,15 @@
       "accused": "Priya Deshmukh",
       "filingDate": "2026-10-02",
       "priority": "STANDARD",
-      "status": "HEARING_IN_PROGRESS",
-      "charges": "IPC Sec 406 (Breach of Trust)"
+      "status": "BAIL_REJECTED",
+      "charges": "IPC Sec 406 (Breach of Trust)",
+      "lastAdjudication": {
+        "decision": "REJECTED",
+        "decisionDate": "2026-11-17",
+        "suretyAmount": 0,
+        "reasoning": "Severity of invoked economic offences, flight risk, and potential witness interference warrant continued judicial detention.",
+        "judgeName": "Hon. Justice Rajesh Sharma"
+      }
     },
     {
       "id": 3,
@@ -36,6 +50,21 @@
   ],
   "petitions": [
     {
+      "bailId": 3,
+      "caseId": 1,
+      "caseNumber": "CNR-KA-BLR-2026-00101",
+      "caseTitle": "State of Karnataka v. Vikram Malhotra (IPC Sec 420, IT Act Sec 66D)",
+      "applicantName": "Vikram Malhotra",
+      "courtName": "City Civil and Sessions Court Bengaluru",
+      "bailType": "REGULAR",
+      "grounds": "Investigation is substantially completed, charge sheet has been submitted, and the applicant has clean antecedents with deep roots in society. No likelihood of witness tampering or flight risk.",
+      "custodyDays": 45,
+      "riskScore": 30,
+      "status": "PENDING",
+      "appliedDate": "2026-11-17",
+      "appliedByAdvocate": "Adv. Shantheni Shenoy (Bar Council)"
+    },
+    {
       "bailId": 1,
       "caseId": 1,
       "caseNumber": "CNR-KA-BLR-2026-00101",
@@ -46,9 +75,14 @@
       "grounds": "Applicant in custody for 45 days. Complete charge sheet filed; digital evidence frozen. Clean antecedents and deep local roots in Bengaluru.",
       "custodyDays": 45,
       "riskScore": 35,
-      "status": "PENDING",
+      "status": "GRANTED",
       "appliedDate": "2026-10-20",
-      "appliedByAdvocate": "Adv. Shantheni Shenoy (BCI/KA/428)"
+      "appliedByAdvocate": "Adv. Shantheni Shenoy (BCI/KA/428)",
+      "decision": "GRANTED",
+      "decisionDate": "2026-11-17",
+      "suretyAmount": 50000,
+      "reasoning": "Investigation substantially completed; custody no longer indispensable for trial progression. Bail granted under Article 21 precedent (Satender Kumar Antil v. CBI).",
+      "adjudicatedByJudge": "Hon. Justice Rajesh Sharma"
     },
     {
       "bailId": 2,
@@ -61,9 +95,14 @@
       "grounds": "Commercial dispute arising from escrow partnership. Dispute is civil in nature; applicant fully cooperating with investigation.",
       "custodyDays": 0,
       "riskScore": 20,
-      "status": "PENDING",
+      "status": "REJECTED",
       "appliedDate": "2026-10-25",
-      "appliedByAdvocate": "Adv. Shriranjini Kumar (BCI/KA/447)"
+      "appliedByAdvocate": "Adv. Shriranjini Kumar (BCI/KA/447)",
+      "decision": "REJECTED",
+      "decisionDate": "2026-11-17",
+      "suretyAmount": 0,
+      "reasoning": "Severity of invoked economic offences, flight risk, and potential witness interference warrant continued judicial detention.",
+      "adjudicatedByJudge": "Hon. Justice Rajesh Sharma"
     }
   ]
 }

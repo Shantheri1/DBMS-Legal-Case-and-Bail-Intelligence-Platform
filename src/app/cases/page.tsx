@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PlusCircle, X, Check } from 'lucide-react';
+import { FileText } from 'lucide-react';
+import CertifiedBailOrderModal, { BailOrderData } from '@/components/CertifiedBailOrderModal';
 
 interface CaseItem {
   id: number;
@@ -29,89 +30,26 @@ export default function CasesPage() {
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [dataSource, setDataSource] = useState<string>('loading');
   const [loading, setLoading] = useState(true);
-
-  // New Case Modal State
-  const [showNewCaseModal, setShowNewCaseModal] = useState(false);
-  const [newCaseLoading, setNewCaseLoading] = useState(false);
-  const [newCaseError, setNewCaseError] = useState('');
-  const [newCaseSuccess, setNewCaseSuccess] = useState('');
-  const [newCaseForm, setNewCaseForm] = useState({
-    caseNumber: `CNR-KA-BLR-2026-00${Math.floor(400 + Math.random() * 500)}`,
-    title: '',
-    court: 'City Civil and Sessions Court Bengaluru',
-    accused: '',
-    charges: 'IPC Sec 420, IPC Sec 120B',
-    priority: 'URGENT',
-  });
-
-  const loadCases = async () => {
-    try {
-      const res = await fetch('/api/cases');
-      if (res.ok) {
-        const data = await res.json();
-        setCases(data.cases || []);
-        setDataSource(data.source || 'postgresql_live');
-      }
-    } catch (err) {
-      console.error('Failed to load cases:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [selectedBailOrder, setSelectedBailOrder] = useState<BailOrderData | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   useEffect(() => {
+    async function loadCases() {
+      try {
+        const res = await fetch('/api/cases');
+        if (res.ok) {
+          const data = await res.json();
+          setCases(data.cases || []);
+          setDataSource(data.source || 'postgresql_live');
+        }
+      } catch (err) {
+        console.error('Failed to load cases:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
     loadCases();
   }, []);
-
-  const handleCreateNewCase = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setNewCaseError('');
-    setNewCaseSuccess('');
-
-    if (!newCaseForm.title || !newCaseForm.accused || !newCaseForm.caseNumber) {
-      setNewCaseError('Please fill in Case Number, Title, and Accused Name.');
-      return;
-    }
-
-    setNewCaseLoading(true);
-
-    try {
-      const res = await fetch('/api/cases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCaseForm),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setNewCaseError(data?.error || 'Failed to register new case.');
-        setNewCaseLoading(false);
-        return;
-      }
-
-      setNewCaseSuccess(`Case ${data.case?.caseNumber || newCaseForm.caseNumber} registered in registry!`);
-      await loadCases();
-
-      setTimeout(() => {
-        setShowNewCaseModal(false);
-        setNewCaseSuccess('');
-        setNewCaseForm({
-          caseNumber: `CNR-KA-BLR-2026-00${Math.floor(400 + Math.random() * 500)}`,
-          title: '',
-          court: 'City Civil and Sessions Court Bengaluru',
-          accused: '',
-          charges: 'IPC Sec 420, IPC Sec 120B',
-          priority: 'URGENT',
-        });
-      }, 1200);
-    } catch (err) {
-      console.error(err);
-      setNewCaseError('Network error registering new case.');
-    } finally {
-      setNewCaseLoading(false);
-    }
-  };
 
   const filteredCases = cases.filter((c) => {
     const matchesFilter = filterStatus === 'ALL' || c.status === filterStatus;
@@ -140,22 +78,12 @@ export default function CasesPage() {
             Dynamically queried from normalized relational tables: <code className="bg-slate-200 px-1 py-0.5 rounded">cases</code>, <code className="bg-slate-200 px-1 py-0.5 rounded">courts</code>, <code className="bg-slate-200 px-1 py-0.5 rounded">case_parties</code>, <code className="bg-slate-200 px-1 py-0.5 rounded">charges</code>.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setShowNewCaseModal(true)}
-            className="px-3.5 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition shadow flex items-center gap-1.5"
-          >
-            <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
-            <span>+ Register New Case</span>
-          </button>
-          <Link
-            href="/bail/apply"
-            className="px-4 py-2 bg-amber-500 text-slate-950 text-xs font-bold rounded-lg hover:bg-amber-400 transition shadow"
-          >
-            + File New Bail Petition
-          </Link>
-        </div>
+        <Link
+          href="/bail/apply"
+          className="px-4 py-2 bg-amber-500 text-slate-950 text-xs font-bold rounded-lg hover:bg-amber-400 transition shadow"
+        >
+          + File New Bail Petition
+        </Link>
       </div>
 
       {/* Filter and Search Bar */}
@@ -258,12 +186,38 @@ export default function CasesPage() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <Link
-                        href={`/bail/intelligence?case=${encodeURIComponent(c.caseNumber)}`}
-                        className="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 rounded font-bold border border-slate-300 transition"
-                      >
-                        Assess Bail →
-                      </Link>
+                      <div className="flex items-center justify-center gap-1.5">
+                        {c.status === 'BAIL_GRANTED' && (
+                          <button
+                            onClick={() => {
+                              setSelectedBailOrder({
+                                bailId: c.id,
+                                caseNumber: c.caseNumber,
+                                caseTitle: c.title,
+                                applicantName: c.accused,
+                                courtName: c.court,
+                                bailType: 'REGULAR',
+                                suretyAmount: c.lastAdjudication?.suretyAmount || 50000,
+                                reasoning: c.lastAdjudication?.reasoning || 'Regular bail granted with solvent surety and passport surrender under Section 439 CrPC.',
+                                judgeName: c.lastAdjudication?.judgeName || 'Hon. Justice Rajesh Sharma',
+                                decisionDate: c.lastAdjudication?.decisionDate || new Date().toISOString().split('T')[0],
+                              });
+                              setIsOrderModalOpen(true);
+                            }}
+                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded border border-emerald-300 transition flex items-center gap-1 cursor-pointer"
+                            title="Download Certified Bail Decree (PDF)"
+                          >
+                            <FileText className="w-3 h-3 text-emerald-600" />
+                            <span>Bail Order</span>
+                          </button>
+                        )}
+                        <Link
+                          href={`/bail/intelligence?case=${encodeURIComponent(c.caseNumber)}`}
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 rounded font-bold border border-slate-300 transition"
+                        >
+                          Assess Bail →
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -273,153 +227,12 @@ export default function CasesPage() {
         </div>
       </div>
 
-      {/* Modal: Register New Case */}
-      {showNewCaseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
-            <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <span>Register New Case Dossier</span>
-                  <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-mono">
-                    eCourts DDL
-                  </span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Registers case in database registry with unique CNR Number.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowNewCaseModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateNewCase} className="p-6 space-y-4">
-              {newCaseError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg font-medium">
-                  {newCaseError}
-                </div>
-              )}
-              {newCaseSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-lg font-medium flex items-center gap-2">
-                  <Check className="w-4 h-4" />
-                  <span>{newCaseSuccess}</span>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">CNR Number (Unique Case ID)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    required
-                    value={newCaseForm.caseNumber}
-                    onChange={(e) => setNewCaseForm({ ...newCaseForm, caseNumber: e.target.value })}
-                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 font-mono bg-slate-50 focus:ring-2 focus:ring-amber-500"
-                    placeholder="e.g. CNR-KA-BLR-2026-00450"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNewCaseForm({
-                        ...newCaseForm,
-                        caseNumber: `CNR-KA-BLR-2026-00${Math.floor(400 + Math.random() * 500)}`,
-                      })
-                    }
-                    className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold rounded-lg border border-slate-300"
-                    title="Generate new CNR number"
-                  >
-                    Auto CNR
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Case Title</label>
-                <input
-                  type="text"
-                  required
-                  value={newCaseForm.title}
-                  onChange={(e) => setNewCaseForm({ ...newCaseForm, title: e.target.value })}
-                  className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-amber-500"
-                  placeholder="e.g. State of Karnataka v. Anand Kumar"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Accused Person Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={newCaseForm.accused}
-                    onChange={(e) => setNewCaseForm({ ...newCaseForm, accused: e.target.value })}
-                    className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-amber-500"
-                    placeholder="e.g. Anand Kumar"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Priority Level</label>
-                  <select
-                    value={newCaseForm.priority}
-                    onChange={(e) => setNewCaseForm({ ...newCaseForm, priority: e.target.value })}
-                    className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50"
-                  >
-                    <option value="URGENT">URGENT</option>
-                    <option value="STANDARD">STANDARD</option>
-                    <option value="LOW">LOW</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Jurisdiction / Court</label>
-                <select
-                  value={newCaseForm.court}
-                  onChange={(e) => setNewCaseForm({ ...newCaseForm, court: e.target.value })}
-                  className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50"
-                >
-                  <option value="City Civil and Sessions Court Bengaluru">City Civil and Sessions Court Bengaluru</option>
-                  <option value="High Court of Karnataka">High Court of Karnataka</option>
-                  <option value="Chief Metropolitan Magistrate Court Bengaluru">Chief Metropolitan Magistrate Court Bengaluru</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Offences & Law Sections (IPC / BNS / IT Act)</label>
-                <input
-                  type="text"
-                  value={newCaseForm.charges}
-                  onChange={(e) => setNewCaseForm({ ...newCaseForm, charges: e.target.value })}
-                  className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-amber-500"
-                  placeholder="e.g. Section 420 IPC, Section 66D IT Act"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t">
-                <button
-                  type="button"
-                  onClick={() => setShowNewCaseModal(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={newCaseLoading}
-                  className="px-4 py-2 bg-amber-500 text-slate-950 font-bold text-xs rounded-lg hover:bg-amber-400 transition shadow disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  {newCaseLoading ? 'Registering...' : 'Register Case'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Official Certified Bail Order & Decree Modal (with QR Code) */}
+      <CertifiedBailOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        orderData={selectedBailOrder}
+      />
     </div>
   );
 }
