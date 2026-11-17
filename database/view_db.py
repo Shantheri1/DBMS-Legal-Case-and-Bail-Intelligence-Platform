@@ -79,7 +79,13 @@ def main():
 
     filter_table = sys.argv[1].lower() if len(sys.argv) > 1 else None
 
-    if filter_table:
+    if filter_table == 'all':
+        print("\n" + "=" * 80)
+        print("  JURISPREDICT - COMPLETE DATABASE DUMP (ALL 15 RELATIONAL TABLES)")
+        print("=" * 80)
+        for t, info in tables.items():
+            display_table(t, info)
+    elif filter_table:
         matched = {k: v for k, v in tables.items() if filter_table in k.lower()}
         if not matched:
             print(f"No table matching '{filter_table}' found. Available tables:")
@@ -98,8 +104,9 @@ def main():
         for t, info in tables.items():
             print(f"  * {t:<26} : {info['count']:>2} rows  ({', '.join(info['columns'][:3])}...)")
         print("-" * 80)
-        print("To view rows for any specific table, run:")
-        print("  python database/view_db.py <table_name>   (e.g. python database/view_db.py cases)")
+        print("Commands to view table data:")
+        print("  python database/view_db.py all          -> View ALL tables and rows at once")
+        print("  python database/view_db.py <table_name> -> View specific table (e.g. cases)")
         print("=" * 80)
 
 if __name__ == '__main__':
