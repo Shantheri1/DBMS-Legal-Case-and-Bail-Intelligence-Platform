@@ -51,6 +51,29 @@ db.unstructured_case_dossiers.insertMany([
       passport_surrendered: false,
       surety_verified: true
     }
+  },
+  {
+    case_number: "CNR-KA-BLR-2026-00318",
+    court_name: "Chief Metropolitan Magistrate Court Bengaluru",
+    fir_details: {
+      fir_number: "0185/2026",
+      police_station: "Ulsoor Gate Police Station, Bengaluru",
+      filing_timestamp: new Date("2026-10-18T11:00:00Z"),
+      narrative: "Altercation and minor scuffle reported in public market area outside retail premises over parking dispute.",
+      evidence_items: [
+        { item_type: "MEDICAL_CERTIFICATE", description: "Outpatient wound certificate confirming simple blunt injury (MLC No 412/2026)", hospital: "Bowring & Lady Curzon Hospital" },
+        { item_type: "CCTV_FOOTAGE", description: "Market entrance security camera footage (12 mins MP4)", file_size_mb: 420 }
+      ]
+    },
+    witness_transcripts: [
+      { witness_id: "W3", name: "R. Sundaram (Shopkeeper)", statement_date: new Date("2026-10-19"), summary: "Stated that argument escalated suddenly; no dangerous weapons or pre-mediation observed." }
+    ],
+    bail_risk_factors: {
+      flight_risk_index: "NEGLIGIBLE",
+      tampering_risk_index: "NEGLIGIBLE",
+      passport_surrendered: false,
+      surety_verified: true
+    }
   }
 ]);
 
