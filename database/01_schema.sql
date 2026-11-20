@@ -250,7 +250,21 @@ ALTER TABLE cases ADD COLUMN IF NOT EXISTS priority_level VARCHAR(20) DEFAULT 'S
 ALTER TABLE bail_decisions ADD COLUMN IF NOT EXISTS surety_amount NUMERIC(12,2) DEFAULT 0.00;
 
 -- ------------------------------------------------------------------------------
--- 10. INDEXES (B-Tree, Full-Text GIN, HNSW Vector)
+-- 10. DATABASE SECURITY AUDIT LOG TABLE
+-- ------------------------------------------------------------------------------
+-- Tamper-proof audit table automatically populated via trigger on case status change
+CREATE TABLE IF NOT EXISTS case_status_audit_log (
+    audit_id SERIAL PRIMARY KEY,
+    case_id INT NOT NULL REFERENCES cases(case_id) ON DELETE CASCADE,
+    case_number VARCHAR(60) NOT NULL,
+    old_status VARCHAR(35),
+    new_status VARCHAR(35) NOT NULL,
+    changed_by VARCHAR(120) DEFAULT 'Judicial Officer',
+    changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ------------------------------------------------------------------------------
+-- 11. INDEXES (B-Tree, Full-Text GIN, HNSW Vector)
 -- ------------------------------------------------------------------------------
 -- B-Tree Indexes on Foreign Keys and High-Frequency Filter Columns
 CREATE INDEX idx_cases_court_id ON cases(court_id);

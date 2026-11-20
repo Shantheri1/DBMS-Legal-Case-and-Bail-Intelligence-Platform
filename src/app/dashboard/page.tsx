@@ -392,7 +392,7 @@ function DashboardContent() {
                       className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-2 cursor-pointer"
                     >
                       <FileCheck className="w-4 h-4 text-emerald-200" />
-                      <span>Download Certified Bail Decree (PDF with QR Code) →</span>
+                      <span>Download Certified Bail Decree (PDF) →</span>
                     </button>
                   </div>
                 )}
@@ -989,7 +989,7 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Official Certified Bail Order & Decree Modal (with QR Code) */}
+      {/* Official Certified Bail Order & Decree Modal */}
       <CertifiedBailOrderModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}

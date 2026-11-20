@@ -273,6 +273,34 @@ AFTER INSERT ON bail_applications
 FOR EACH ROW
 EXECUTE FUNCTION fn_auto_compute_risk_on_apply();
 
+-- Trigger Function 4: Security Audit Trail for Case Status Changes
+-- Automatically records every status transition (e.g. BAIL_PENDING -> BAIL_GRANTED)
+CREATE TABLE IF NOT EXISTS case_status_audit_log (
+    audit_id SERIAL PRIMARY KEY,
+    case_id INT NOT NULL REFERENCES cases(case_id) ON DELETE CASCADE,
+    case_number VARCHAR(60) NOT NULL,
+    old_status VARCHAR(35),
+    new_status VARCHAR(35) NOT NULL,
+    changed_by VARCHAR(120) DEFAULT 'Judicial Officer',
+    changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE OR REPLACE FUNCTION fn_audit_case_status_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.status IS DISTINCT FROM NEW.status THEN
+        INSERT INTO case_status_audit_log (case_id, case_number, old_status, new_status, changed_at)
+        VALUES (NEW.case_id, NEW.case_number, OLD.status, NEW.status, CURRENT_TIMESTAMP);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_audit_case_status
+AFTER UPDATE OF status ON cases
+FOR EACH ROW
+EXECUTE FUNCTION fn_audit_case_status_change();
+
 -- ------------------------------------------------------------------------------
 -- 4. ACID TRANSACTIONS DEMONSTRATION (SQL Concept 4)
 -- ------------------------------------------------------------------------------

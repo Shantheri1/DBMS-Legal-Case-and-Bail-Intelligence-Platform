@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, Printer, ShieldCheck, CheckCircle2, Download, Scale, QrCode } from 'lucide-react';
+import { X, Printer, ShieldCheck, CheckCircle2, Download, Scale } from 'lucide-react';
 
 export interface BailOrderData {
   bailId: number;
@@ -26,58 +26,6 @@ interface CertifiedBailOrderModalProps {
   orderData: BailOrderData | null;
 }
 
-// Deterministic QR Code Matrix generator for authentic SVG visualization
-function generateQrMatrix(input: string): boolean[][] {
-  const size = 25; // 25x25 Version 2 QR
-  const matrix: boolean[][] = Array(size).fill(false).map(() => Array(size).fill(false));
-
-  // 1. Finder patterns (Top-Left, Top-Right, Bottom-Left)
-  const placeFinder = (r0: number, c0: number) => {
-    for (let r = 0; r < 7; r++) {
-      for (let c = 0; c < 7; c++) {
-        if (
-          r === 0 || r === 6 || c === 0 || c === 6 ||
-          (r >= 2 && r <= 4 && c >= 2 && c <= 4)
-        ) {
-          matrix[r0 + r][c0 + c] = true;
-        }
-      }
-    }
-  };
-  placeFinder(0, 0);
-  placeFinder(0, size - 7);
-  placeFinder(size - 7, 0);
-
-  // 2. Timing patterns
-  for (let i = 8; i < size - 8; i++) {
-    matrix[6][i] = i % 2 === 0;
-    matrix[i][6] = i % 2 === 0;
-  }
-
-  // 3. Simple hash-based deterministic data fill
-  let hash = 0;
-  for (let i = 0; i < input.length; i++) {
-    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
-  }
-
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      // Skip finder zones
-      const inTL = r < 8 && c < 8;
-      const inTR = r < 8 && c >= size - 8;
-      const inBL = r >= size - 8 && c < 8;
-      const inTiming = r === 6 || c === 6;
-
-      if (!inTL && !inTR && !inBL && !inTiming) {
-        const val = (hash ^ (r * 13 + c * 17)) % 100;
-        matrix[r][c] = val > 45;
-      }
-    }
-  }
-
-  return matrix;
-}
-
 export default function CertifiedBailOrderModal({
   isOpen,
   onClose,
@@ -88,8 +36,6 @@ export default function CertifiedBailOrderModal({
   const orderDate = orderData.decisionDate || new Date().toISOString().split('T')[0];
   const orderNumber = `CR-ORD/${new Date(orderDate).getFullYear()}/${orderData.bailId || '101'}`;
   const verificationHash = `SHA256-${orderData.caseNumber.replace(/[^A-Z0-9]/g, '')}-${orderData.bailId}X99A`;
-  const qrString = `https://ecourts.gov.in/verify?cnr=${orderData.caseNumber}&bailId=${orderData.bailId}&auth=${verificationHash}`;
-  const qrMatrix = generateQrMatrix(qrString);
 
   const handlePrint = () => {
     window.print();
@@ -237,37 +183,28 @@ export default function CertifiedBailOrderModal({
               </ol>
             </div>
 
-            {/* Official Certification, Signatures & QR Code */}
+            {/* Official Certification & Digital Signature */}
             <div className="mt-10 pt-6 border-t-2 border-slate-900 flex flex-col sm:flex-row justify-between items-center gap-6 text-xs font-sans">
               
-              {/* Left: Dynamic QR Code for Prison Superintendent Verification */}
+              {/* Left: Official Court Seal & Registry Dispatch */}
               <div className="flex items-center gap-3">
-                <div className="p-1 bg-white border border-slate-900 rounded shadow-sm">
-                  <svg width="84" height="84" viewBox="0 0 25 25" className="shape-rendering-crisp">
-                    {qrMatrix.map((row, r) =>
-                      row.map((cell, c) => (
-                        <rect
-                          key={`${r}-${c}`}
-                          x={c}
-                          y={r}
-                          width="1"
-                          height="1"
-                          fill={cell ? '#0f172a' : '#ffffff'}
-                        />
-                      ))
-                    )}
-                  </svg>
+                <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-800 flex flex-col items-center justify-center text-center p-1 bg-slate-50">
+                  <span className="text-[8px] font-bold text-slate-800 uppercase tracking-tighter leading-tight">
+                    COURT SEAL
+                  </span>
+                  <Scale className="w-4 h-4 text-slate-700 my-0.5" />
+                  <span className="text-[7px] font-mono text-slate-600">BENGALURU</span>
                 </div>
-                <div className="space-y-0.5 max-w-[200px]">
-                  <p className="text-[10px] font-bold text-slate-900 flex items-center gap-1">
-                    <QrCode className="w-3.5 h-3.5 text-blue-700" />
-                    <span>NPIP Prison Verification</span>
+                <div className="space-y-0.5 max-w-[220px]">
+                  <p className="text-[11px] font-bold text-slate-900 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Certified True Copy</span>
                   </p>
                   <p className="text-[9px] text-slate-500 leading-tight">
-                    Scan via eCourts / National Prison Portal to verify judicial signature.
+                    Issued under the seal of the Court of Sessions / High Court of Karnataka.
                   </p>
                   <p className="text-[9px] font-mono text-slate-600 truncate">
-                    {verificationHash}
+                    Ref ID: {verificationHash}
                   </p>
                 </div>
               </div>

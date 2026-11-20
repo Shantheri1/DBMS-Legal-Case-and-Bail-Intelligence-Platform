@@ -227,7 +227,7 @@ export default function CasesPage() {
         </div>
       </div>
 
-      {/* Official Certified Bail Order & Decree Modal (with QR Code) */}
+      {/* Official Certified Bail Order & Decree Modal */}
       <CertifiedBailOrderModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}

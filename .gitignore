@@ -26,3 +26,11 @@ node_modules/
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Project Reports and Generated Archives
+*.docx
+*.pdf
+*.zip
+scripts/
+
+
